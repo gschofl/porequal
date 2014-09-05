@@ -9,12 +9,12 @@ Description: This package provides functions to perform graphical quality
     assessment of SAM/BAM file-based multiple alignments.
 License: MIT + LICENSE
 Encoding: UTF-8
-Depends:
+Depends: 
     data.table,
     ggplot2,
     grid,
     reshape2
-Imports:
+Imports: 
     assertthat,
     Biostrings,
     GenomicAlignments,
@@ -24,9 +24,10 @@ Imports:
     Rsamtools,
     gsmisc
 SystemRequirements: samtools
-Collate:
+Collate: 
     'utils.R'
     'alignment-depth.R'
     'alignment-quality.R'
     'porequal.R'
     'sam-to-bam.R'
+Suggests: testthat
