@@ -1,0 +1,32 @@
+Package: porequal
+Type: Package
+Title: Assessing the quality of high-throughput multiple sequence alignments.
+Version: 0.0.1
+Date: 2014-09-04
+Author: Gerhard Schöfl <gerhard.schofl@gmail.com>
+Maintainer: Gerhard Schöfl <gerhard.schofl@gmail.com>
+Description: This package provides functions to perform graphical quality
+    assessment of SAM/BAM file-based multiple alignments.
+License: MIT + LICENSE
+Encoding: UTF-8
+Depends:
+    data.table,
+    ggplot2,
+    grid,
+    reshape2
+Imports:
+    assertthat,
+    Biostrings,
+    GenomicAlignments,
+    GenomicRanges,
+    IRanges,
+    rbamtools,
+    Rsamtools,
+    gsmisc
+SystemRequirements: samtools
+Collate:
+    'utils.R'
+    'alignment-depth.R'
+    'alignment-quality.R'
+    'porequal.R'
+    'sam-to-bam.R'
