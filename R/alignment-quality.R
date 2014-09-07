@@ -8,53 +8,53 @@ NULL
 
 #' Generate a consensus table between a BAM alignment and a reference sequence.
 #' 
+#' @details
+#' \code{consensus_table} generates a \code{\link{data.table}} with 5 columns:
+#' The \emph{Position} along the reference, the \emph{Nucleotide} (A, C, G, T, or Gap [-]),
+#' the number of reads at a Position for each Nucleotide, the 
+#' 
 #' @param bamfile Path to the BAM file.
 #' @param reffile Path to the reference sequence (Fasta format).
-#' @param offset Using \code{\link[GenomicAlignments]{sequenceLayer}}, the refseq and
-#' the query reads seem to be one off. Use this offset to cut off bases from the 
-#' beginning of the query reads and the end of the refseq.
-#' @return A data.table
+#' @return A data.table. See \code{Details}.
 #' @export
-consensus_table <- function(bamfile, reffile, offset = 1) {
+consensus_table <- function(bamfile, reffile) {
   assert_that(is.readable(bamfile), is.readable(reffile))
+  ## make sure to import the SEQ field from the BAM file
   param <- ScanBamParam(what = "seq")
-  aln <- readGAlignmentsFromBam(bamfile, param = param)
+  ## other fields omitted by default are the query quality (QUAL) field,
+  ## and the mapping quality (MAPQ) fields.
+  aln <- readGAlignmentsFromBam(bamfile, index = bamfile, param = param)
   refname <- levels(seqnames(aln))
-  
   qseq <- mcols(aln)$seq
-  rseq <- read_fasta(reffile, "DNAStringSet")
+  rseq <- read_fasta(reffile, as = "DNAStringSet")
   qseq_on_ref <- sequenceLayer(qseq, cigar(aln))
-  qmat <- consensusMatrix(qseq_on_ref, as.prob = FALSE, shift = start(aln), 
-                          width = seqlengths(aln))  
-  ## UGLY HACK
-  ## The refseq and the query reads seem to be one off
-  ## So I take out the first column from the queries and the last column from refseq (offset).
-  if (offset > 0) {
-    qmat <- qmat[c(1:4, 16), -(1:offset)]
-    rmat <- consensusMatrix(rseq)
-    rmat <- rmat[c(1:4, 16), -(ncol(rmat) + 1 - 1:offset)]
-  }
+  
+  ## start() returns the 1-based leftmost position of the clipped query. It should
+  ## be zero-based (see package rbamtools), so we have to subtract 1
+  qmat <- consensusMatrix(qseq_on_ref, as.prob = FALSE, shift = start(aln) - 1L, 
+                          width = seqlengths(aln), baseOnly = TRUE)
+  rmat <- consensusMatrix(rseq, baseOnly = TRUE)
   assert_that(all(dim(qmat) == dim(rmat)))
-
+  
   ## report probabilities
   prob.qmat <- sweep(qmat, 2, colSums(qmat), `/`)
-  
+
   ## create data.tables
   qtbl <- as.data.table(qmat)
   setnames(qtbl, names(qtbl), as.character(seq_len(ncol(qtbl))))
-  qtbl[, Nucleotide := rownames(qmat)]
+  qtbl[, Nucleotide := c("A", "C", "G", "T", "-")]
   qtbl <- melt(qtbl, id.vars = "Nucleotide", value.name = "Nreads", variable.name = "Position")
   setkeyv(qtbl, c("Position", "Nucleotide"))
   
   prob.qtbl <- as.data.table(prob.qmat)
   setnames(prob.qtbl, names(prob.qtbl), as.character(seq_len(ncol(prob.qtbl))))
-  prob.qtbl[, Nucleotide := rownames(qmat)]
+  prob.qtbl[, Nucleotide := c("A", "C", "G", "T", "-")]
   prob.qtbl <- melt(prob.qtbl, id.vars = "Nucleotide", value.name = "Probability.query", variable.name = "Position")
   setkeyv(prob.qtbl, c("Position", "Nucleotide"))
   
   rtbl <- as.data.table(rmat)
   setnames(rtbl, names(rtbl), as.character(seq_len(ncol(rtbl))))
-  rtbl[, Nucleotide := rownames(rmat)]
+  rtbl[, Nucleotide := c("A", "C", "G", "T", "-")]
   rtbl <- melt(rtbl, id.vars = "Nucleotide", value.name = "Probability.ref", variable.name = "Position")
   setkeyv(rtbl, c("Position", "Nucleotide"))
   

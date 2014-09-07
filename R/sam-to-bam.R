@@ -2,12 +2,11 @@
 #' @importFrom gsmisc has_command replace_ext
 NULL
 
-#' Convert a samfile to a bamfile
+#' Convert a SAM file to a BAM file.
 #' 
-#' @param samfile Path to the sam file.
+#' @param samfile Path to the SAM file.
 #' @param reffile Path to the reference sequence (Fasta format)
-#' @return A list containing the paths to a bam file (.bam) and
-#'   an index file (.bai)
+#' @return The paths to the BAM file.
 #' @export
 sam2bam <- function(samfile, reffile) {
   assert_that(file.exists(samfile))
@@ -26,5 +25,5 @@ sam2bam <- function(samfile, reffile) {
   cmd <- paste("samtools index", bamfile)
   system(cmd, intern = TRUE)
   assert_that(file.exists(baifile))
-  invisible(list(bam = bamfile, bai = baifile))
+  bamfile
 }
